@@ -1,13 +1,14 @@
 # textclassifier_2.0
 
-Setup:
+### Setup:
 `python3 -m venv env`
 
 `source env/bin/activate`
 
 `pip install -r requirements.txt`
 
-Run:
+### Run:
 
-> source env/bin/activate
-> fastapi dev main.py
+`source env/bin/activate`
+
+`fastapi dev main.py`
