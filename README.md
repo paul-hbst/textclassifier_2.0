@@ -1,11 +1,11 @@
 # textclassifier_2.0
 
 Setup:
-`python3 -m venv env
+`python3 -m venv env`
 
-source env/bin/activate
+`source env/bin/activate`
 
-pip install -r requirements.txt`
+`pip install -r requirements.txt`
 
 Run:
 
