@@ -1,0 +1,57 @@
+from typing import List
+import numpy as np
+from fastapi import FastAPI
+from pydantic import BaseModel
+from sklearn.model_selection import train_test_split
+from imblearn.ensemble import BalancedRandomForestClassifier
+
+app = FastAPI()
+
+
+class TrainItem(BaseModel):
+    data: List[float]
+    label: str
+
+
+class ClassifyItem(BaseModel):
+    data: List[float]
+
+
+class Input(BaseModel):
+    train: List[TrainItem]
+    classify: List[ClassifyItem]
+
+
+def label_to_int(label: str) -> int:
+    # Adjust this logic to match your label format
+    return 1 if label.lower() in ["true", "yes", "1"] else 0
+
+
+@app.post("/predict")
+def train_and_predict(input_data: Input):
+    # Extract embeddings and labels
+    X = [np.array(item.data) for item in input_data.train]
+    y = [label_to_int(item.label) for item in input_data.train]
+
+    # Split into train/test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Train the classifier
+    clf = BalancedRandomForestClassifier(
+        max_depth=9, 
+        max_features=0.8, 
+        max_samples=0.3, 
+        n_estimators=185
+    )
+    clf.fit(X_train, y_train)
+    
+    # Classify new items
+    X_classify = [np.array(item.data) for item in input_data.classify]
+    relevance_prediction = clf.predict(X_classify)
+    relevance_prediction_probas = clf.predict_proba(X_classify)
+    
+    # Return results as JSON
+    return {
+        "predictions": relevance_prediction.tolist(),
+        "probabilities": relevance_prediction_probas.tolist()
+    }

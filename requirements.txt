@@ -1,0 +1,4 @@
+fastapi[standard]
+numpy
+scikit-learn
+imbalanced-learn
