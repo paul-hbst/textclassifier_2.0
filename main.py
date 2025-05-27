@@ -1,12 +1,21 @@
 from typing import List
 import numpy as np
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from sklearn.model_selection import train_test_split
 from imblearn.ensemble import BalancedRandomForestClassifier
+import secrets
+from dotenv import load_dotenv
+import os
 
 app = FastAPI()
+security = HTTPBasic()
 
+load_dotenv()
+
+USERNAME = os.getenv("BASIC_AUTH_USERNAME")
+PASSWORD = os.getenv("BASIC_AUTH_PASSWORD")
 
 class TrainItem(BaseModel):
     data: List[float]
@@ -24,11 +33,21 @@ class Input(BaseModel):
 
 def label_to_int(label: str) -> int:
     # Adjust this logic to match your label format
-    return 1 if label.lower() in ["true", "yes", "1"] else 0
+    return 1 if label.lower() in ["true", "yes", "1", "relevant"] else 0
 
+def authenticate(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, USERNAME)
+    correct_password = secrets.compare_digest(credentials.password, PASSWORD)
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 @app.post("/predict")
-def train_and_predict(input_data: Input):
+def train_and_predict(input_data: Input, user: str = Depends(authenticate)):
     # Extract embeddings and labels
     X = [np.array(item.data) for item in input_data.train]
     y = [label_to_int(item.label) for item in input_data.train]
